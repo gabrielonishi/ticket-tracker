@@ -49,6 +49,22 @@ def greet() -> typing.Tuple[str, datetime.date, datetime.time]:
 
     return event_name, event_date, event_time
 
+def event_link(event_name:str, event_date:str, event_time:datetime.time) -> str:
+    """
+    TODO
 
+    @Sarah a partir da data e nome do evento, usar o url de pesquisa da blacktag
+    pra encontrar o evento
+    Ex:
+     - event_name = 'gvjada'
+     - event_date = '12/03/2023'
+     - event_time = '10:30'
+    
+    Fazer um cronjob pra rodar essa funcao no dia 12 de marco de 2023 e ficar
+    fazendo request pro url https://blacktag.com.br/eventos?q=gvjada das 10:28
+    10:32.
+    """
+    pass
+    
 def main() -> None:
     event_name, event_date, event_time = greet()
