@@ -6,7 +6,7 @@ import time
 import typing
 
 # Beautiful Soup imports
-import bs4
+# import bs4
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -49,22 +49,72 @@ def greet() -> typing.Tuple[str, datetime.date, datetime.time]:
 
     return event_name, event_date, event_time
 
-def event_link(event_name:str, event_date:str, event_time:datetime.time) -> str:
-    """
-    TODO
+def parse_html_date(html_date: str) -> datetime.date:
+    months = {
+        "Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6,
+        "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12,
+        "Jan": 1, "Fev": 2, "Mar": 3, "Abr": 4, "Mai": 5, "Jun": 6,
+        "Jul": 7, "Ago": 8, "Set": 9, "Out": 10, "Nov": 11, "Dez": 12
+    }
+    day, month_name = html_date.split()[1], html_date.split()[3]
+    month = months[month_name]
+    year = datetime.datetime.now().year  # Assuming the year is the current year
+    return datetime.date(year, month, int(day))
 
-    @Sarah a partir da data e nome do evento, usar o url de pesquisa da blacktag
-    pra encontrar o evento
-    Ex:
-     - event_name = 'gvjada'
-     - event_date = '12/03/2023'
-     - event_time = '10:30'
-    
-    Fazer um cronjob pra rodar essa funcao no dia 12 de marco de 2023 e ficar
-    fazendo request pro url https://blacktag.com.br/eventos?q=gvjada das 10:28
-    10:32.
-    """
-    pass
-    
+
+def buscar_evento(search_url: str, event_name: str, event_date: datetime.date) -> typing.Optional[str]:
+    response = requests.get(search_url)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        eventos = soup.find_all('article', class_='card-event')
+        for evento in eventos:
+            titulo = evento.find('h5', class_='mb-1 mb-sm-3 text-dark').text.strip()
+            data_html = evento.find('span', class_='mb-0 text-primary').text.strip()
+            if titulo.lower() == event_name.lower() and parse_html_date(data_html) == event_date:
+                link = evento.find('a', href=True)['href']
+                return f"https://blacktag.com.br{link}"
+    return None
+
+def event_link(event_name: str, event_date: str, event_time: datetime.time) -> str:
+    base_url = "https://blacktag.com.br/eventos?q="
+    search_url = f"{base_url}{event_name.replace(' ', '-').lower()}"
+    tempo_limite = 240  # tempo limite de 4 minutos
+
+    # Convert event_date from string to datetime.date
+    day, month, year = map(int, event_date.split('/'))
+    event_date = datetime.date(year, month, day)
+
+    inicio = time.time()
+    while (time.time() - inicio) < tempo_limite:
+        link_evento = buscar_evento(search_url, event_name, event_date)
+        if link_evento:
+            return link_evento
+        time.sleep(10)  # Espera 10 segundos antes de tentar novamente
+
+    return "Evento não encontrado dentro do limite de tempo."
+
+
 def main() -> None:
     event_name, event_date, event_time = greet()
+    link = event_link(event_name, event_date, event_time)
+    print(f"Link do evento: {link}")
+
+
+if __name__ == "__main__":
+    main()
+
+
+# def test_event_link():
+#     # Simular entrada do usuário
+#     event_name = "TINDER MATCH - SUPRA DOM PEDRO"
+#     event_date = "31/05/2024"
+#     event_time = datetime.time(10, 0)
+    
+#     # Testar a função event_link
+#     link = event_link(event_name, event_date, event_time)
+#     print(f"Link do evento: {link}")
+#     assert "https://blacktag.com.br/eventos/21179/tinder-match-supra-dom-pedro" in link
+
+
+# if __name__ == "__main__":
+#     test_event_link()
