@@ -18,8 +18,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 import utils
 
+# Amount of time before and after the ticket sale should open
+SEARCH_TIME = 240
+# Amount of time between requests
+BETWEEN_REQUEST_TIME = 10
 
-def greet() -> typing.Tuple[str, datetime.date, datetime.time]:
+
+def greet() -> typing.Tuple[str, float]:
     event_name: str = input("Qual o nome da festa desejada?")
 
     ticket_sale_date: str = input(
@@ -30,10 +35,9 @@ def greet() -> typing.Tuple[str, datetime.date, datetime.time]:
         ticket_sale_date = input(
             "Data inválida. Digite novamente usando o formato dd/mm/aaaa")
 
-    day, month, year = ticket_sale_date.split("/")
-
-    ticket_sale_date: datetime.date = datetime.date(
-        int(year), int(month), int(day))
+    day = int(ticket_sale_date.split("/")[0])
+    month = int(ticket_sale_date.split("/")[1])
+    year = int(ticket_sale_date.split("/")[2])
 
     ticket_sale_time: str = input(
         "Que horas os ingressos do evento abrem para venda? (hh:mm)")
@@ -46,12 +50,14 @@ def greet() -> typing.Tuple[str, datetime.date, datetime.time]:
     horas: int = int(ticket_sale_time.split(":")[0])
     minutos: int = int(ticket_sale_time.split(":")[1])
 
-    horas, minutos = ticket_sale_time.split(":")
+    ticket_sale_epoch = datetime.datetime(
+        year, month, day, horas, minutos).timestamp()
 
-    ticket_sale_time: datetime.time = datetime.time(int(horas), int(minutos))
+    if ticket_sale_epoch < datetime.datetime.now().timestamp():
+        raise ValueError(
+            "Data e hora de venda de ingressos inválida (no passado)")
 
-    return event_name, ticket_sale_date, ticket_sale_time
-
+    return event_name, ticket_sale_epoch
 
 def parse_html_date(html_date: str) -> datetime.date:
     months = {
