@@ -6,7 +6,6 @@ import time
 import typing
 
 # Beautiful Soup imports
-# import bs4
 import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
@@ -22,32 +21,37 @@ import utils
 
 def greet() -> typing.Tuple[str, datetime.date, datetime.time]:
     event_name: str = input("Qual o nome da festa desejada?")
-    event_date: str = input("Qual a data do evento? (dd/mm/aaaa)")
+
+    ticket_sale_date: str = input(
+        "Que dia os ingressos do evento abrem para venda? (dd/mm/aaaa)")
 
     # Validando data
-    while not re.match(r"\d{2}/\d{2}/\d{4}", event_date):
-        event_date = input(
+    while not re.match(r"\d{2}/\d{2}/\d{4}", ticket_sale_date):
+        ticket_sale_date = input(
             "Data inválida. Digite novamente usando o formato dd/mm/aaaa")
 
-    day, month, year = event_date.split("/")
+    day, month, year = ticket_sale_date.split("/")
 
-    event_date: datetime.date = datetime.date(int(year), int(month), int(day))
+    ticket_sale_date: datetime.date = datetime.date(
+        int(year), int(month), int(day))
 
-    event_time: str = input("Qual o horário do evento? (hh:mm)")
+    ticket_sale_time: str = input(
+        "Que horas os ingressos do evento abrem para venda? (hh:mm)")
 
     # Validando horário
-    while not re.match(r"\d{2}:\d{2}", event_time):
-        event_time = input(
+    while not re.match(r"\d{2}:\d{2}", ticket_sale_time):
+        ticket_sale_time = input(
             "Horário inválido. Digite novamente usando o formato hh:mm")
 
-    horas: int = int(event_time.split(":")[0])
-    minutos: int = int(event_time.split(":")[1])
+    horas: int = int(ticket_sale_time.split(":")[0])
+    minutos: int = int(ticket_sale_time.split(":")[1])
 
-    horas, minutos = event_time.split(":")
+    horas, minutos = ticket_sale_time.split(":")
 
-    event_time: datetime.time = datetime.time(int(horas), int(minutos))
+    ticket_sale_time: datetime.time = datetime.time(int(horas), int(minutos))
 
-    return event_name, event_date, event_time
+    return event_name, ticket_sale_date, ticket_sale_time
+
 
 def parse_html_date(html_date: str) -> datetime.date:
     months = {
