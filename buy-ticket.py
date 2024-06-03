@@ -176,14 +176,9 @@ def buy_ticket(buy_ticket_url: str) -> None:
 
 
 def main() -> None:
-    # event_name, ticket_sale_date, ticket_sale_time = greet()
-    # buy_ticket_url = search_event(event_name, ticket_sale_epoch)
-    buy_ticket_url = "https://blacktag.com.br/eventos/20565/pagode-da-arena/ingressos"
-
+    event_name, ticket_sale_date, ticket_sale_time = greet()
+    buy_ticket_url = search_event(event_name, ticket_sale_epoch)
     buy_ticket(buy_ticket_url)
-
-    # link = event_link(event_name, ticket_sale_date, ticket_sale_time)
-    # print(f"Link do evento: {link}")
 
 
 if __name__ == "__main__":
