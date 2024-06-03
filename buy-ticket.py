@@ -1,19 +1,20 @@
 # Selenium imports
 import datetime
+import os
 import random
 import re
 import time
 import typing
 
-# Beautiful Soup imports
 import requests
 from bs4 import BeautifulSoup
+from dotenv import find_dotenv, load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select, WebDriverWait
 from webdriver_manager.chrome import ChromeDriverManager
 
 import utils
@@ -101,16 +102,85 @@ def search_event(event_name: str, ticket_sale_epoch: str) -> str:
     raise TimeoutError("Event not found")
 
 
+def buy_ticket(buy_ticket_url: str) -> None:
+    # Using random user agents to avoid host suspition
+    u_agent = random.choice(utils.user_agents)
+
+    arguments = [
+        "--disable-cookies",
+        "--disable-local-storage",
+        "--disable-session-storage",
+        "--block-third-party-cookies"
+        f"user-agent={u_agent}"
+    ]
+
+    chrome_options = Options()
+    for arg in arguments:
+        chrome_options.add_argument(arg)
+
+    driver = webdriver.Chrome(options=chrome_options)
+
+    driver.get(url=buy_ticket_url)
+
+    driver.implicitly_wait(10)
+    select_element = driver.find_element(By.ID, 'event-ticket-0-quantity')
+
+    select = Select(select_element)
+
+    select.select_by_value('1')
+
+    button_element = driver.find_element(
+        By.XPATH, "//button[text()='Comprar' and contains(@class, 'btn-info')]")
+    button_element.click()
+
+    email = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.NAME, 'email')))
+
+    load_dotenv(find_dotenv())
+
+    email.send_keys(os.environ.get('BLACKTAG_USERNAME'))
+    password = driver.find_element(By.NAME, 'password')
+    password.send_keys(os.environ.get('BLACKTAG_PASSWORD'))
+
+    button_element = driver.find_element(
+        By.XPATH, "//button[text()='Entrar']")
+    button_element.click()
+
+    request_code_element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((
+                                       By.XPATH, "//button[contains(@class, 'btn-whatsapp') and @data-provider='whatsapp']")))
+
+    request_code_element.click()
+
+    code_input = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, "sms-code"))
+    )
+
+    confirm_button = driver.find_element(
+        By.XPATH, "//button[text()='Confirmar']")
+
+    WebDriverWait(driver, 300, poll_frequency=1).until(
+        lambda d: len(code_input.get_attribute("value")
+                      ) == 6 and code_input.get_attribute("value").isdigit()
+    )
+
+    confirm_button.click()
+
+    ok_button = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//button[text()='OK']"))
+    )
+
+    ok_button.click()
+
+    time.sleep(10)
+
+
 def main() -> None:
     # event_name, ticket_sale_date, ticket_sale_time = greet()
-    event_name = "Pagode da Arena"
-    ticket_sale_date = datetime.datetime(2024, 6, 2, 20, 57)
-    ticket_sale_epoch = ticket_sale_date.timestamp()
-    if ticket_sale_epoch < datetime.datetime.now().timestamp():
-        raise ValueError(
-            "Data e hora de venda de ingressos inválida (no passado)")
-    buy_ticket_url = search_event(event_name, ticket_sale_epoch)
-    print(buy_ticket_url)
+    # buy_ticket_url = search_event(event_name, ticket_sale_epoch)
+    buy_ticket_url = "https://blacktag.com.br/eventos/20565/pagode-da-arena/ingressos"
+
+    buy_ticket(buy_ticket_url)
 
     # link = event_link(event_name, ticket_sale_date, ticket_sale_time)
     # print(f"Link do evento: {link}")
